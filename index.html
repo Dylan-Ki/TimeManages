@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Manager - Quản lý thời gian</title>
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #4CD964;
+            --accent-color: #FF3B30;
+            --warning-color: #FF9500;
+            --background-dark: #1a1a1a;
+            --background-grey: #292929;
+            --text-light: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --border-color: #333;
+            --success-color: #34C759;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(41, 41, 41, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 122, 255, 0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        /* Clock Styles */
+        .clock-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2d2d2d 0%, #1a1a1a 100%);
+            box-shadow: 0 0 30px rgba(0, 122, 255, 0.3);
+        }
+
+        .clock-face {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-color);
+            background: rgba(26, 26, 26, 0.9);
+        }
+
+        .clock-hand {
+            position: absolute;
+            background: var(--text-light);
+            transform-origin: bottom center;
+            border-radius: 2px;
+        }
+
+        .hour-hand {
+            width: 4px;
+            height: 50px;
+            top: 50px;
+            left: calc(50% - 2px);
+        }
+
+        .minute-hand {
+            width: 3px;
+            height: 70px;
+            top: 30px;
+            left: calc(50% - 1.5px);
+        }
+
+        .second-hand {
+            width: 1px;
+            height: 80px;
+            top: 20px;
+            left: calc(50% - 0.5px);
+            background: var(--accent-color);
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .clock-numbers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .clock-number {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-light);
+        }
+
+        /* Timer Styles */
+        .timer-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer-time {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .timer-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--background-dark);
+            color: var(--text-light);
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* Pomodoro Styles */
+        .pomodoro-settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-item label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .setting-item input {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--background-dark);
+            color: var(--text-light);
+        }
+
+        .pomodoro-status {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .status-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .status-work {
+            color: var(--accent-color);
+        }
+
+        .status-break {
+            color: var(--success-color);
+        }
+
+        .status-long-break {
+            color: var(--warning-color);
+        }
+
+        .cycle-counter {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Calendar Styles */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .calendar-nav:hover {
+            background: #0056b3;
+        }
+
+        .calendar-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            padding: 10px 5px;
+            font-weight: bold;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .calendar-day:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-day.today {
+            background: var(--accent-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-day.other-month {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--background-dark);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .timer-time {
+                font-size: 2.5rem;
+            }
+            
+            .clock-container {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .clock-face {
+                width: 160px;
+                height: 160px;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Time Manager</h1>
+            <p>Quản lý thời gian hiệu quả với đồng hồ, đếm ngược và Pomodoro</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Clock Card -->
+            <div class="card fade-in">
+                <h2>🕐 Đồng hồ thời gian thực</h2>
+                <div class="clock-container">
+                    <div class="clock-face">
+                        <div class="clock-numbers" id="clock-numbers"></div>
+                        <div class="clock-hand hour-hand" id="hour-hand"></div>
+                        <div class="clock-hand minute-hand" id="minute-hand"></div>
+                        <div class="clock-hand second-hand" id="second-hand"></div>
+                        <div class="clock-center"></div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <div id="digital-time" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);"></div>
+                    <div id="current-date" style="color: var(--text-muted); margin-top: 5px;"></div>
+                </div>
+            </div>
+
+            <!-- Timer Card -->
+            <div class="card fade-in">
+                <h2>⏱️ Đếm ngược tùy chỉnh</h2>
+                <div class="timer-display">
+                    <div class="timer-time" id="timer-display">00:00:00</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="timer-progress"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timer-input">
+                    <div class="input-group">
+                        <label>Giờ</label>
+                        <input type="number" id="timer-hours" min="0" max="23" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Phút</label>
+                        <input type="number" id="timer-minutes" min="0" max="59" value="5">
+                    </div>
+                    <div class="input-group">
+                        <label>Giây</label>
+                        <input type="number" id="timer-seconds" min="0" max="59" value="0">
+                    </div>
+                </div>
+                <div class="timer-controls">
+                    <button class="btn btn-success" id="timer-start">Bắt đầu</button>
+                    <button class="btn btn-warning" id="timer-pause">Tạm dừng</button>
+                    <button class="btn btn-danger" id="timer-reset">Đặt lại</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Pomodoro Card -->
+            <div class="card fade-in">
+                <h2>🍅 Pomodoro Timer</h2>
+                <div class="pomodoro-status">
+                    <div class="status-text" id="pomodoro-status">Sẵn sàng bắt đầu</div>
+                    <div class="cycle-counter" id="cycle-counter">Chu kỳ: 0/4</div>
+                </div>
+                <div class="timer-display">
+                    <div class="timer-time" id="pomodoro-display">25:00</div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="pomodoro-progress"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pomodoro-settings">
+                    <div class="setting-item">
+                        <label>Thời gian làm việc (phút)</label>
+                        <input type="number" id="work-duration" min="1" max="60" value="25">
+                    </div>
+                    <div class="setting-item">
+                        <label>Nghỉ ngắn (phút)</label>
+                        <input type="number" id="short-break" min="1" max="30" value="5">
+                    </div>
+                    <div class="setting-item">
+                        <label>Nghỉ dài (phút)</label>
+                        <input type="number" id="long-break" min="1" max="60" value="15">
+                    </div>
+                    <div class="setting-item">
+                        <label>Chu kỳ trước nghỉ dài</label>
+                        <input type="number" id="cycles-before-long" min="2" max="8" value="4">
+                    </div>
+                </div>
+                <div class="timer-controls">
+                    <button class="btn btn-success" id="pomodoro-start">Bắt đầu</button>
+                    <button class="btn btn-warning" id="pomodoro-pause">Tạm dừng</button>
+                    <button class="btn btn-danger" id="pomodoro-reset">Đặt lại</button>
+                </div>
+            </div>
+
+            <!-- Calendar Card -->
+            <div class="card fade-in">
+                <h2>📅 Lịch tháng</h2>
+                <div class="calendar-header">
+                    <button class="calendar-nav" id="prev-month">‹</button>
+                    <div class="calendar-title" id="calendar-title"></div>
+                    <button class="calendar-nav" id="next-month">›</button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">CN</div>
+                    <div class="calendar-day-header">T2</div>
+                    <div class="calendar-day-header">T3</div>
+                    <div class="calendar-day-header">T4</div>
+                    <div class="calendar-day-header">T5</div>
+                    <div class="calendar-day-header">T6</div>
+                    <div class="calendar-day-header">T7</div>
+                </div>
+                <div class="calendar-grid" id="calendar-days"></div>
+                <div style="text-align: center; margin-top: 15px; color: var(--text-muted); font-size: 14px;">
+                    Hôm nay: <span id="today-info"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let timerInterval = null;
+        let pomodoroInterval = null;
+        let timerState = {
+            isRunning: false,
+            totalSeconds: 0,
+            remainingSeconds: 0
+        };
+        let pomodoroState = {
+            isRunning: false,
+            currentPhase: 'work', // 'work', 'shortBreak', 'longBreak'
+            currentCycle: 0,
+            totalSeconds: 0,
+            remainingSeconds: 0
+        };
+        let currentDate = new Date();
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeClock();
+            initializeTimer();
+            initializePomodoro();
+            initializeCalendar();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+
+        // Clock functionality
+        function initializeClock() {
+            const clockNumbers = document.getElementById('clock-numbers');
+            
+            // Create clock numbers
+            for (let i = 1; i <= 12; i++) {
+                const number = document.createElement('div');
+                number.className = 'clock-number';
+                number.textContent = i;
+                
+                const angle = (i * 30 - 90) * Math.PI / 180;
+                const radius = 75;
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                
+                number.style.left = `calc(50% + ${x}px - 7px)`;
+                number.style.top = `calc(50% + ${y}px - 7px)`;
+                
+                clockNumbers.appendChild(number);
+            }
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Update digital time
+            const timeString = now.toLocaleTimeString('vi-VN');
+            document.getElementById('digital-time').textContent = timeString;
+            
+            // Update date
+            const dateString = now.toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('current-date').textContent = dateString;
+            
+            // Update clock hands
+            const hours = now.getHours() % 12;
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            const hourDeg = (hours * 30) + (minutes * 0.5);
+            const minuteDeg = minutes * 6;
+            const secondDeg = seconds * 6;
+            
+            document.getElementById('hour-hand').style.transform = `rotate(${hourDeg}deg)`;
+            document.getElementById('minute-hand').style.transform = `rotate(${minuteDeg}deg)`;
+            document.getElementById('second-hand').style.transform = `rotate(${secondDeg}deg)`;
+        }
+
+        // Timer functionality
+        function initializeTimer() {
+            document.getElementById('timer-start').addEventListener('click', startTimer);
+            document.getElementById('timer-pause').addEventListener('click', pauseTimer);
+            document.getElementById('timer-reset').addEventListener('click', resetTimer);
+        }
+
+        function startTimer() {
+            if (!timerState.isRunning) {
+                if (timerState.remainingSeconds === 0) {
+                    const hours = parseInt(document.getElementById('timer-hours').value) || 0;
+                    const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
+                    const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+                    
+                    timerState.totalSeconds = hours * 3600 + minutes * 60 + seconds;
+                    timerState.remainingSeconds = timerState.totalSeconds;
+                }
+                
+                if (timerState.remainingSeconds > 0) {
+                    timerState.isRunning = true;
+                    timerInterval = setInterval(updateTimer, 1000);
+                    document.getElementById('timer-start').textContent = 'Đang chạy...';
+                }
+            }
+        }
+
+        function pauseTimer() {
+            if (timerState.isRunning) {
+                timerState.isRunning = false;
+                clearInterval(timerInterval);
+                document.getElementById('timer-start').textContent = 'Tiếp tục';
+            }
+        }
+
+        function resetTimer() {
+            timerState.isRunning = false;
+            timerState.remainingSeconds = 0;
+            clearInterval(timerInterval);
+            document.getElementById('timer-display').textContent = '00:00:00';
+            document.getElementById('timer-progress').style.width = '0%';
+            document.getElementById('timer-start').textContent = 'Bắt đầu';
+        }
+
+        function updateTimer() {
+            if (timerState.remainingSeconds > 0) {
+                timerState.remainingSeconds--;
+                
+                const hours = Math.floor(timerState.remainingSeconds / 3600);
+                const minutes = Math.floor((timerState.remainingSeconds % 3600) / 60);
+                const seconds = timerState.remainingSeconds % 60;
+                
+                document.getElementById('timer-display').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                const progress = ((timerState.totalSeconds - timerState.remainingSeconds) / timerState.totalSeconds) * 100;
+                document.getElementById('timer-progress').style.width = `${progress}%`;
+                
+                if (timerState.remainingSeconds === 0) {
+                    timerCompleted();
+                }
+            }
+        }
+
+        function timerCompleted() {
+            timerState.isRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('timer-start').textContent = 'Bắt đầu';
+            document.getElementById('timer-display').classList.add('pulse');
+            
+            // Show notification
+            if (Notification.permission === 'granted') {
+                new Notification('Hết thời gian!', {
+                    body: 'Bộ đếm ngược đã hoàn thành.',
+                    icon: '/favicon.ico'
+                });
+            }
+            
+            setTimeout(() => {
+                document.getElementById('timer-display').classList.remove('pulse');
+            }, 3000);
+        }
+
+        // Pomodoro functionality
+        function initializePomodoro() {
+            document.getElementById('pomodoro-start').addEventListener('click', startPomodoro);
+            document.getElementById('pomodoro-pause').addEventListener('click', pausePomodoro);
+            document.getElementById('pomodoro-reset').addEventListener('click', resetPomodoro);
+            
+            updatePomodoroDisplay();
+        }
+
+        function startPomodoro() {
+            if (!pomodoroState.isRunning) {
+                if (pomodoroState.remainingSeconds === 0) {
+                    setupPomodoroPhase();
+                }
+                
+                pomodoroState.isRunning = true;
+                pomodoroInterval = setInterval(updatePomodoro, 1000);
+                document.getElementById('pomodoro-start').textContent = 'Đang chạy...';
+            }
+        }
+
+        function pausePomodoro() {
+            if (pomodoroState.isRunning) {
+                pomodoroState.isRunning = false;
+                clearInterval(pomodoroInterval);
+                document.getElementById('pomodoro-start').textContent = 'Tiếp tục';
+            }
+        }
+
+        function resetPomodoro() {
+            pomodoroState.isRunning = false;
+            pomodoroState.currentPhase = 'work';
+            pomodoroState.currentCycle = 0;
+            pomodoroState.remainingSeconds = 0;
+            clearInterval(pomodoroInterval);
+            updatePomodoroDisplay();
+            document.getElementById('pomodoro-start').textContent = 'Bắt đầu';
+            document.getElementById('pomodoro-progress').style.width = '0%';
+        }
+
+        function setupPomodoroPhase() {
+            const workDuration = parseInt(document.getElementById('work-duration').value) * 60;
+            const shortBreak = parseInt(document.getElementById('short-break').value) * 60;
+            const longBreak = parseInt(document.getElementById('long-break').value) * 60;
+            const cyclesBeforeLong = parseInt(document.getElementById('cycles-before-long').value);
+            
+            if (pomodoroState.currentPhase === 'work') {
+                pomodoroState.totalSeconds = workDuration;
+                pomodoroState.remainingSeconds = workDuration;
+            } else if (pomodoroState.currentPhase === 'shortBreak') {
+                pomodoroState.totalSeconds = shortBreak;
+                pomodoroState.remainingSeconds = shortBreak;
+            } else if (pomodoroState.currentPhase === 'longBreak') {
+                pomodoroState.totalSeconds = longBreak;
+                pomodoroState.remainingSeconds = longBreak;
+            }
+        }
+
+        function updatePomodoro() {
+            if (pomodoroState.remainingSeconds > 0) {
+                pomodoroState.remainingSeconds--;
+                
+                const minutes = Math.floor(pomodoroState.remainingSeconds / 60);
+                const seconds = pomodoroState.remainingSeconds % 60;
+                
+                document.getElementById('pomodoro-display').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                const progress = ((pomodoroState.totalSeconds - pomodoroState.remainingSeconds) / pomodoroState.totalSeconds) * 100;
+                document.getElementById('pomodoro-progress').style.width = `${progress}%`;
+                
+                if (pomodoroState.remainingSeconds === 0) {
+                    pomodoroPhaseCompleted();
+                }
+            }
+        }
+
+        function pomodoroPhaseCompleted() {
+            pomodoroState.isRunning = false;
+            clearInterval(pomodoroInterval);
+            
+            const cyclesBeforeLong = parseInt(document.getElementById('cycles-before-long').value);
+            
+            if (pomodoroState.currentPhase === 'work') {
+                pomodoroState.currentCycle++;
+                
+                if (pomodoroState.currentCycle % cyclesBeforeLong === 0) {
+                    pomodoroState.currentPhase = 'longBreak';
+                } else {
+                    pomodoroState.currentPhase = 'shortBreak';
+                }
+            } else {
+                pomodoroState.currentPhase = 'work';
+            }
+            
+            pomodoroState.remainingSeconds = 0;
+            updatePomodoroDisplay();
+            document.getElementById('pomodoro-start').textContent = 'Bắt đầu';
+            
+            // Show notification
+            if (Notification.permission === 'granted') {
+                const phaseNames = {
+                    'work': 'Thời gian làm việc',
+                    'shortBreak': 'Nghỉ ngắn',
+                    'longBreak': 'Nghỉ dài'
+                };
+                
+                new Notification('Pomodoro hoàn thành!', {
+                    body: `Chuyển sang: ${phaseNames[pomodoroState.currentPhase]}`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        function updatePomodoroDisplay() {
+            const statusElement = document.getElementById('pomodoro-status');
+            const cycleElement = document.getElementById('cycle-counter');
+            const displayElement = document.getElementById('pomodoro-display');
+            
+            const phaseNames = {
+                'work': 'Thời gian làm việc',
+                'shortBreak': 'Nghỉ ngắn',
+                'longBreak': 'Nghỉ dài'
+            };
+            
+            const phaseClasses = {
+                'work': 'status-work',
+                'shortBreak': 'status-break',
+                'longBreak': 'status-long-break'
+            };
+            
+            statusElement.textContent = phaseNames[pomodoroState.currentPhase] || 'Sẵn sàng bắt đầu';
+            statusElement.className = `status-text ${phaseClasses[pomodoroState.currentPhase] || ''}`;
+            
+            const cyclesBeforeLong = parseInt(document.getElementById('cycles-before-long').value);
+            cycleElement.textContent = `Chu kỳ: ${pomodoroState.currentCycle}/${cyclesBeforeLong}`;
+            
+            if (pomodoroState.remainingSeconds === 0) {
+                const workDuration = parseInt(document.getElementById('work-duration').value);
+                displayElement.textContent = `${workDuration.toString().padStart(2, '0')}:00`;
+            }
+        }
+
+        // Calendar functionality
+        function initializeCalendar() {
+            document.getElementById('prev-month').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('next-month').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+            
+            renderCalendar();
+            updateTodayInfo();
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Update title
+            const monthNames = [
+                'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+            ];
+            document.getElementById('calendar-title').textContent = `${monthNames[month]} ${year}`;
+            
+            // Clear previous days
+            const calendarDays = document.getElementById('calendar-days');
+            calendarDays.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day other-month';
+                const prevMonthLastDay = new Date(year, month, 0).getDate();
+                emptyDay.textContent = prevMonthLastDay - startingDayOfWeek + i + 1;
+                calendarDays.appendChild(emptyDay);
+            }
+            
+            // Add days of the current month
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                
+                // Check if this is today
+                if (year === today.getFullYear() && 
+                    month === today.getMonth() && 
+                    day === today.getDate()) {
+                    dayElement.classList.add('today');
+                }
+                
+                calendarDays.appendChild(dayElement);
+            }
+            
+            // Add days from next month to fill the grid
+            const totalCells = calendarDays.children.length;
+            const remainingCells = 42 - totalCells; // 6 rows × 7 days
+            for (let day = 1; day <= remainingCells; day++) {
+                const nextMonthDay = document.createElement('div');
+                nextMonthDay.className = 'calendar-day other-month';
+                nextMonthDay.textContent = day;
+                calendarDays.appendChild(nextMonthDay);
+            }
+        }
+
+        function updateTodayInfo() {
+            const today = new Date();
+            const todayString = today.toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('today-info').textContent = todayString;
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
